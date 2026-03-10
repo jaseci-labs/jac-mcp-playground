@@ -4,12 +4,15 @@ cl import from "@jac/runtime" { useParams, useNavigate }
 cl import from "lucide-react" {
     PanelLeftClose, PanelLeftOpen, ScrollText, Plus, Server, Trash2,
     Wrench, MessageSquare, FolderOpen, RefreshCw, ChevronRight,
-    Loader2, Search, Wifi, Radio, AlertTriangle
+    Loader2, Search, Wifi, Radio, AlertTriangle, Bot, Activity
 }
 cl import from ...store.mcp_store { useMcpStore }
 cl import from ...hooks.useMcpClient { useMcpClient }
 cl import from ...components.mcp.history_panel { HistoryPanel }
 cl import from ...components.mcp.connect_modal { ConnectModal }
+cl import from ...components.llm.llm_config { LlmConfigPanel }
+cl import from ...components.llm.chat_panel { ChatPanel }
+cl import from ...components.llm.agent_trace { AgentTracePanel }
 
 cl {
     # ── Sidebar Server Item ─────────────────────────────────────────────────
@@ -201,6 +204,7 @@ cl {
         has showConnectModal: bool = False;
         has searchQuery: str = "";
         has refreshing: bool = False;
+        has showTrace: bool = False;
 
         # Set active connection from URL param
         setActiveConnection(connId);
@@ -323,18 +327,29 @@ cl {
                         <span className="text-xs font-medium text-foreground truncate max-w-48">{connection.name}</span>
                     </div>}
                 </div>
-                <button
-                    onClick={lambda -> None { logsPanelOpen = not logsPanelOpen; }}
-                    className={f"flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all cursor-pointer {
-                        'bg-primary/10 text-primary border border-primary/20 shadow-sm shadow-primary/5' if logsPanelOpen else 'text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent'
-                    }"}
-                >
-                    <ScrollText size={14}/>
-                    Logs
-                    {len(history) > 0 and <span className={f"text-xs px-1.5 py-0.5 rounded-full ml-0.5 {
-                        'bg-primary/20 text-primary' if logsPanelOpen else 'bg-muted text-muted-foreground'
-                    }"}>{len(history)}</span>}
-                </button>
+                <div className="flex items-center gap-1.5">
+                    {activeTab == "agent" and <button
+                        onClick={lambda -> None { showTrace = not showTrace; }}
+                        className={f"flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all cursor-pointer {
+                            'bg-info/10 text-info border border-info/20 shadow-sm shadow-info/5' if showTrace else 'text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent'
+                        }"}
+                    >
+                        <Activity size={14}/>
+                        Trace
+                    </button>}
+                    <button
+                        onClick={lambda -> None { logsPanelOpen = not logsPanelOpen; }}
+                        className={f"flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all cursor-pointer {
+                            'bg-primary/10 text-primary border border-primary/20 shadow-sm shadow-primary/5' if logsPanelOpen else 'text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent'
+                        }"}
+                    >
+                        <ScrollText size={14}/>
+                        Logs
+                        {len(history) > 0 and <span className={f"text-xs px-1.5 py-0.5 rounded-full ml-0.5 {
+                            'bg-primary/20 text-primary' if logsPanelOpen else 'bg-muted text-muted-foreground'
+                        }"}>{len(history)}</span>}
+                    </button>
+                </div>
             </div>
 
             <div className="flex flex-1 overflow-hidden">
@@ -403,9 +418,10 @@ cl {
                             <TabBtn label="Tools" icon={<Wrench size={14}/>} count={len(tools)} active={activeTab == "tools"} onClick={lambda -> None { setActiveTab("tools"); searchQuery = ""; }}/>
                             <TabBtn label="Prompts" icon={<MessageSquare size={14}/>} count={len(prompts)} active={activeTab == "prompts"} onClick={lambda -> None { setActiveTab("prompts"); searchQuery = ""; }}/>
                             <TabBtn label="Resources" icon={<FolderOpen size={14}/>} count={len(resources)} active={activeTab == "resources"} onClick={lambda -> None { setActiveTab("resources"); searchQuery = ""; }}/>
+                            <TabBtn label="Agent" icon={<Bot size={14}/>} count={None} active={activeTab == "agent"} onClick={lambda -> None { setActiveTab("agent"); searchQuery = ""; }}/>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-4">
+                        {activeTab != "agent" and <div className="flex-1 overflow-y-auto p-4">
                             {len(currentItems) > 3 and <div className="mb-4">
                                 <div className="relative">
                                     <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50"/>
@@ -442,7 +458,17 @@ cl {
                                     return <ResourceItem key={r.uri} resource={r}/>;
                                 })}
                             </div>}
-                        </div>
+                        </div>}
+
+                        {activeTab == "agent" and <div className="flex-1 flex overflow-hidden">
+                            <div className="flex-1 flex flex-col overflow-hidden">
+                                <LlmConfigPanel/>
+                                <ChatPanel connection={connection}/>
+                            </div>
+                            {showTrace and <aside className="w-72 flex-shrink-0 border-l border-border bg-card/20 overflow-hidden">
+                                <AgentTracePanel/>
+                            </aside>}
+                        </div>}
                     </>}
 
                     {connection.status == "disconnected" and <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground">
