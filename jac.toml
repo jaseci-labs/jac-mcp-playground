@@ -22,7 +22,7 @@ plugins = ["tailwindcss()"]
 lib_imports = ["import tailwindcss from '@tailwindcss/vite'"]
 
 [dependencies.npm]
-jac-client-node = "1.0.4"
+jac-client-node = "1.0.7"
 tailwindcss = "latest"
 zod = "^3.23.0"
 "react-hook-form" = "^7.53.0"

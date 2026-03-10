@@ -108,8 +108,8 @@ cl {
                     <p className="text-xs font-medium text-muted-foreground/60">No logs yet</p>
                     <p className="text-xs text-muted-foreground/40">Requests will appear here</p>
                 </div>}
-                {len(filtered) > 0 and filtered.map(lambda(entry: Any) -> Any {
-                    return <HistoryEntry key={entry.id} entry={entry}/>;
+                {len(filtered) > 0 and filtered.map(lambda(`entry: Any) -> Any {
+                    return <HistoryEntry key={`entry.id} entry={`entry}/>;
                 })}
             </div>
         </div>;
